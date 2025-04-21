@@ -43,6 +43,8 @@ class MovieViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = self.queryset
 
+        queryset = queryset.prefetch_related("genres", "actors")
+
         filter_queryset = utils.extract_param_ids(
             self.request.query_params,
             "genres",
@@ -119,7 +121,22 @@ class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
 
     def get_queryset(self):
-        return Order.objects.filter(user=self.request.user)
+        queryset = self.queryset.filter(user=self.request.user)
+
+        if self.action == "list":
+            queryset = queryset.select_related("user")
+            queryset = queryset.prefetch_related(
+                "tickets",
+                "tickets__movie_session",
+                "tickets__movie_session__movie",
+                "tickets__movie_session__cinema_hall",
+            )
+        if self.action == "retrieve":
+            queryset = queryset.prefetch_related(
+                "tickets",
+            )
+
+        return queryset
 
     def perform_create(self, serializer):
         return serializer.save(user=self.request.user)
