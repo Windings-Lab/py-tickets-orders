@@ -3,5 +3,5 @@ from rest_framework import authentication
 
 class AlwaysAuth(authentication.BaseAuthentication):
     def authenticate(self, request):
-        user = get_user_model().objects.get(username="admin.user")
+        user, _ = get_user_model().objects.get_or_create(username="admin.user")
         return (user, None)
