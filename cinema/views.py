@@ -1,4 +1,7 @@
+from datetime import datetime
+
 from rest_framework import viewsets
+from rest_framework.exceptions import ValidationError
 
 from cinema import utils
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
@@ -68,6 +71,28 @@ class MovieViewSet(viewsets.ModelViewSet):
 class MovieSessionViewSet(viewsets.ModelViewSet):
     queryset = MovieSession.objects.all()
     serializer_class = MovieSessionSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+
+        filter_queryset = {}
+
+        date = self.request.query_params.get("date", None)
+        if date:
+            try:
+                filter_date = datetime.strptime(date, "%Y-%m-%d").date()
+                filter_queryset.update({"show_time__date": filter_date})
+            except ValueError:
+                raise ValidationError(
+                    {"date": "Invalid date format. Use YYYY-MM-DD"}
+                )
+
+        filter_queryset.update(utils.extract_param_ids(
+            self.request.query_params,
+            "movie",
+        ))
+
+        return queryset.filter(**filter_queryset)
 
     def get_serializer_class(self):
         if self.action == "list":

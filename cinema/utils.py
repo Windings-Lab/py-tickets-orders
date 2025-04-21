@@ -18,7 +18,8 @@ def extract_param_ids(
     if not data:
         return result
 
+    result[f"{field_name}__in"] = []
     for obj_id in data:
-        result[field_name] = obj_id
+        result[f"{field_name}__in"].append(obj_id)
 
     return result
