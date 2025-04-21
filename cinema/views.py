@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 
+from cinema import utils
 from cinema.models import Genre, Actor, CinemaHall, Movie, MovieSession, Order
 
 from cinema.serializers import (
@@ -34,6 +35,25 @@ class CinemaHallViewSet(viewsets.ModelViewSet):
 class MovieViewSet(viewsets.ModelViewSet):
     queryset = Movie.objects.all()
     serializer_class = MovieSerializer
+
+    def get_queryset(self):
+        queryset = self.queryset
+
+        filter_queryset = utils.extract_param_ids(
+            self.request.query_params,
+            "genres",
+        )
+
+        filter_queryset.update(utils.extract_param_ids(
+            self.request.query_params,
+            "actors",
+        ))
+
+        title = self.request.query_params.get("title", None)
+        if title:
+            filter_queryset.update({"title__icontains": title})
+
+        return queryset.filter(**filter_queryset)
 
     def get_serializer_class(self):
         if self.action == "list":
