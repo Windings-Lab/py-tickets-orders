@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.db.models import F, Count
 from rest_framework import viewsets
 from rest_framework.exceptions import ValidationError
 
@@ -74,6 +75,16 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = self.queryset
+
+        if self.action == "list":
+            queryset = queryset.select_related("movie", "cinema_hall")
+
+            cinema_hall_capacity = (
+                    F("cinema_hall__rows") * F("cinema_hall__seats_in_row")
+            )
+            queryset = queryset.annotate(
+                tickets_available=cinema_hall_capacity - Count("tickets")
+            )
 
         filter_queryset = {}
 
